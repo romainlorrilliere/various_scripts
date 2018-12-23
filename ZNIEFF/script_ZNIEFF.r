@@ -1,8 +1,11 @@
-## script R de gestion des listes d'espèces dans les znieff
+##############################################################
+## script R de gestion des listes d'espèces dans les znieff ##
+##############################################################
 
 
-## the packages
-
+## https://github.com/romainlorrilliere/various_scripts/tree/master/ZNIEFF
+## Romain Lorrilliere
+## romainlorrilliere@gmail.com
 
 #### Libraries ####
 
@@ -15,25 +18,41 @@ for(p in vecPackage)
         install.packages(pkgs=p,repos = "http://cran.univ-paris1.fr/",dependencies=TRUE)
 
 
-
 require(readODS)
 require(reshape2)
 require(dplyr)
 
+##################
 
 
 
+#' Mise à jour régional des espèces déterminantes par ZNIEFF
 #'
+#' @param id_REG identifiant numérique de la région
+#' @param fichierZNIEFF.nom nom du fichier de la table des ZNIEFF
+#' @param fichierZNIEFF.colnameZNIEFF nom de la colonne des identifiants des ZNIEFF dans la table des ZNIEFF par defaut NM_SFFZN
+#' @param fichierZNIEFF.colnameSp nom de colonnes code sp dans le fichiers ZNIEFF par defaut CD_REF
+#' @param fichierSp.nom vecteur des fichiers des espèces déterminantes
+#' @param fichierSp.colnameSp vecteur des noms des colonnes code sp dans les fichiers espèces
+#' @param output pour obtenir un résumé par ZNIEFF cf. return section
+#' @param fichierZNIEFF.encoding encodage du fichier ZNIEFF par defaut UTF-8
+#' @param fichierZNIEFF.stringsAsFactor valeur du paramètre stringAsFactors du fichier ZNIEFF defaut FALSE
+#' @param fichierZNIEFF.decimal valeur du paramètre dec (décimal) du fichier ZNIEFF defaut ,
+#' @param fichierSp.encoding vecteur des encodages des fichiers espèces par defaut UTF-8
+#' @param fichierSp.stringsAsFactor vecteur des valeurs du paramètre stringAsFactors des fichiers espèces par defaut FALSE
+#' @param fichierSp.decimal vecteur des valeurs du paramètre dec (décimal) des fichiers espèces par defaut ,
 #'
-
+#' @return if output == TRUE table résumé des ZNIEFF
+#' @export sauvegarde de 2 fichiers : mise à jour de la table des ZNIEFF et une table résumé des ZNIEFF régionales
+#'
+#' @author Romain Lorrilliere
 #'
 #' @examples regionalisation_espece_znieff(id_REG="52",fichierZNIEFF.nom="BDZNIEFF_PROD_2018-12-13_19-19-29/PROD_ESPECE_2018-12-13.csv",fichierSp.nom=c("Liste_PDL_ 2018_Flore_vf.ods","Liste_PDL_ 2018_Faunev_vf3.ods"),fichierSp.colnameSp=c("CD_NOM (TaxRef12)","CD_NOM (Taxref12)"))
-
-
 
 regionalisation_espece_znieff <- function(id_REG,
                                           fichierZNIEFF.nom,
                                           fichierZNIEFF.colnameZNIEFF="NM_SFFZN",
+                                          fichierZNIEFF.colnameSp ="CD_REF",
                                           fichierSp.nom,fichierSp.colnameSp,
                                           output=FALSE,
                                           fichierZNIEFF.encoding="UTF-8",
@@ -71,9 +90,11 @@ regionalisation_espece_znieff <- function(id_REG,
     d.sp <-  read.csv.ods(fichierZNIEFF.nom,encoding=fichierZNIEFF.encoding,
                           dec=fichierZNIEFF.decimal,
                           stringsAsFactor=fichierZNIEFF.stringsAsFactor)
-#browser()
-    if(fichierZNIEFF.colnameZNIEFF != "NM_SFFZN") colnames(d.sp)[colnames(d.sp)==fichierZNIEFF.colnameZNIEFF] <- "NM_SFFZN"
 
+    if(fichierZNIEFF.colnameZNIEFF != "NM_SFFZN") colnames(d.sp)[colnames(d.sp)==fichierZNIEFF.colnameZNIEFF] <- "NM_SFFZN"
+    if(fichierZNIEFF.colnameSp != "CD_REF") colnames(d.sp)[colnames(d.sp)==fichierZNIEFF.colnameSp] <- "CD_REF"
+    
+    
     d.sp$REG <- substr(d.sp$NM_SFFZN,1,2)==id_REG
     d.sp$FG_ESP_REG <- ifelse(substr(d.sp$NM_SFFZN,1,2)==id_REG,
                    ifelse(d.sp$CD_REF %in% vecsp,"D",ifelse(d.sp$FG_ESP == "C","C","A")),
