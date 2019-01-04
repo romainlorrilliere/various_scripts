@@ -135,10 +135,11 @@ regionalisation_espece_znieff <- function(id_REG,
     tabZNIEFF <- merge(tabZNIEFF,tabZNIEFF_remove,by="NM_SFFZN",all=TRUE)
     tabZNIEFF <- merge(tabZNIEFF,tabZNIEFF_FG_ESP,by="NM_SFFZN",all=TRUE)
     tabZNIEFF <- merge(tabZNIEFF,tabZNIEFF_FG_ESP_REG,by="NM_SFFZN",all=TRUE)
+    tabZNIEFF[is.na(tabZNIEFF)] <- 0
 
     newfichierZNIEFFsummary.nom <- paste("ZNIEFF_REG_",id_REG,".csv",sep="")
     cat("\n\n  -->  Sauvegarde table résumé par ZNIEFF:\n", newfichierZNIEFFsummary.nom)
-    write.csv(tabZNIEFF, newfichierZNIEFFsummary.nom,row.names=FALSE)
+    write.csv2(tabZNIEFF, newfichierZNIEFFsummary.nom,row.names=FALSE)
     cat("\n       DONE !\n")
 
     newfichierZNIEFF.nom <- paste(substr(fichierZNIEFF.nom,1,nchar(fichierZNIEFF.nom)-4),"_REG_",id_REG,".csv",sep="")
