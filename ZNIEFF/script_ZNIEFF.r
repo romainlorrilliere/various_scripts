@@ -62,8 +62,9 @@ regionalisation_espece_znieff <- function(id_REG,
                                           fichierSp.stringsAsFactor=FALSE,
                                           fichierSp.decimal=",") {
 
+### set de variable pour debugage
 
-                                        #id_REG="52";fichierZNIEFF.nom="BDZNIEFF_PROD_2018-12-13_19-19-29/PROD_ESPECE_2018-12-13.csv";fichierZNIEFF.encoding="UTF-8"; fichierZNIEFF.stringsAsFactor=FALSE; fichierZNIEFF.decimal=";"; fichierSp.nom=c("Liste_PDL_ 2018_Flore_vf.ods","Liste_PDL_ 2018_Faunev_vf3.ods");fichierSp.colnameSp=c("CD_NOM (TaxRef12)","CD_NOM (Taxref12)");fichierSp.encoding="UTF-8"; fichierSp.stringsAsFactor=FALSE; fichierSp.decimal=";"output=FALSE
+### id_REG="52";fichierZNIEFF.nom="BDZNIEFF_PROD_2018-12-13_19-19-29/PROD_ESPECE_2018-12-13.csv";fichierZNIEFF.encoding="UTF-8"; fichierZNIEFF.stringsAsFactor=FALSE; fichierZNIEFF.decimal=";"; fichierSp.nom=c("Liste_PDL_ 2018_Flore_vf.ods","Liste_PDL_ 2018_Faunev_vf3.ods");fichierSp.colnameSp=c("CD_NOM (TaxRef12)","CD_NOM (Taxref12)");fichierSp.encoding="UTF-8"; fichierSp.stringsAsFactor=FALSE; fichierSp.decimal=";";output=FALSE;fichierZNIEFF.colnameZNIEFF="NM_SFFZN";fichierZNIEFF.colnameSp ="CD_REF"
 
     library(reshape2)
     library(dplyr)
@@ -93,8 +94,8 @@ regionalisation_espece_znieff <- function(id_REG,
 
     if(fichierZNIEFF.colnameZNIEFF != "NM_SFFZN") colnames(d.sp)[colnames(d.sp)==fichierZNIEFF.colnameZNIEFF] <- "NM_SFFZN"
     if(fichierZNIEFF.colnameSp != "CD_REF") colnames(d.sp)[colnames(d.sp)==fichierZNIEFF.colnameSp] <- "CD_REF"
-    
-    
+
+
     d.sp$REG <- substr(d.sp$NM_SFFZN,1,2)==id_REG
     d.sp$FG_ESP_REG <- ifelse(substr(d.sp$NM_SFFZN,1,2)==id_REG,
                    ifelse(d.sp$CD_REF %in% vecsp,"D",ifelse(d.sp$FG_ESP == "C","C","A")),
@@ -110,16 +111,30 @@ regionalisation_espece_znieff <- function(id_REG,
     tabZNIEFF <- merge(tabZNIEFF,tabZNIEFF_num,by=fichierZNIEFF.colnameZNIEFF,all=TRUE)
 
     tabZNIEFF_FG_ESP_REG <- table(subset(d.sp,REG,select=c("NM_SFFZN","FG_ESP_REG")))
-    colnames(tabZNIEFF_FG_ESP_REG) <- paste("REG_",id_REG,"_NB_",colnames(tabZNIEFF_FG_ESP_REG),
-                                            sep="")
+    colnames(tabZNIEFF_FG_ESP_REG) <- paste("REG_",id_REG,"_NB_",colnames(tabZNIEFF_FG_ESP_REG),sep="")
     tabZNIEFF_FG_ESP_REG <- dcast(as.data.frame(tabZNIEFF_FG_ESP_REG),NM_SFFZN ~ FG_ESP_REG)
     tabZNIEFF_FG_ESP <- table(subset(d.sp,REG,select=c("NM_SFFZN","FG_ESP")))
     colnames(tabZNIEFF_FG_ESP) <- paste("NB_",colnames(tabZNIEFF_FG_ESP),sep="")
     tabZNIEFF_FG_ESP <- dcast(as.data.frame(tabZNIEFF_FG_ESP),NM_SFFZN ~ FG_ESP)
 
+
+
+    d.sp.change <- subset(d.sp,REG & ID_ZNIEFF_STATUT_CHANGE)
+    tabZNIEFF_new <- aggregate(ID_ESPECE ~ NM_SFFZN + FG_ESP_REG, d.sp.change,length)
+
+    tabZNIEFF_new <- dcast(tabZNIEFF_new,NM_SFFZN ~ FG_ESP_REG)
+    colnames(tabZNIEFF_new)[2:ncol(tabZNIEFF_new)] <- paste("REG_",id_REG,"_NEW_",colnames(tabZNIEFF_new)[2:ncol(tabZNIEFF_new)],sep="")
+    tabZNIEFF_new[is.na(tabZNIEFF_new)] <- 0
+
+    tabZNIEFF_remove <- aggregate(ID_ESPECE ~ NM_SFFZN + FG_ESP, d.sp.change,length)
+    tabZNIEFF_remove <- dcast(tabZNIEFF_remove,NM_SFFZN ~ FG_ESP)
+    colnames(tabZNIEFF_remove)[2:ncol(tabZNIEFF_remove)] <- paste("REG_",id_REG,"_REMOVE_",colnames(tabZNIEFF_remove)[2:ncol(tabZNIEFF_remove)],sep="")
+    tabZNIEFF_remove[is.na(tabZNIEFF_remove)] <- 0
+
+    tabZNIEFF <- merge(tabZNIEFF,tabZNIEFF_new,by="NM_SFFZN",all=TRUE)
+    tabZNIEFF <- merge(tabZNIEFF,tabZNIEFF_remove,by="NM_SFFZN",all=TRUE)
     tabZNIEFF <- merge(tabZNIEFF,tabZNIEFF_FG_ESP,by="NM_SFFZN",all=TRUE)
     tabZNIEFF <- merge(tabZNIEFF,tabZNIEFF_FG_ESP_REG,by="NM_SFFZN",all=TRUE)
-
 
     newfichierZNIEFFsummary.nom <- paste("ZNIEFF_REG_",id_REG,".csv",sep="")
     cat("\n\n  -->  Sauvegarde table résumé par ZNIEFF:\n", newfichierZNIEFFsummary.nom)
