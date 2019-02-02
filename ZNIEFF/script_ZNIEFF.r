@@ -144,16 +144,18 @@ regionalisation_espece_znieff <- function(id_REG,
     newfichierZNIEFF.nom <- paste(substr(fichierZNIEFF.nom,1,nchar(fichierZNIEFF.nom)-4),"_REG_",id_REG,".csv",sep="")
 
     cat("\n\n  -->  Sauvegarde de la table ZNIEFF mise à jour avec nouvelles colonnes:\n", newfichierZNIEFF.nom)
-    write.csv(d.sp, newfichierZNIEFF.nom,row.names=FALSE,fileEncoding=fichierZNIEFF.encoding)
+    write.csv(d.sp, newfichierZNIEFF.nom,row.names=FALSE,fileEncoding=fichierZNIEFF.encoding,,na="")
     cat("\n       DONE !\n")
+
+
+
+    d.sp$FG_ESP2 <- ifelse(is.na(d.sp$FG_ESP_REG),d.sp$FG_ESP,d.sp$FG_ESP_REG)
+    d.sp <- d.sp[,colZNIEFF]
 
     newfichierZNIEFFlite.nom <- paste(substr(fichierZNIEFF.nom,1,nchar(fichierZNIEFF.nom)-4),"_REG_",id_REG,"_MNHN_lite.csv",sep="")
 
-    d.sp$FG_ESP <- d.sp$FG_ESP_REG
-    d.sp <- d.sp[,colZNIEFF]
-
-    cat("\n\n  -->  Sauvegarde de la table ZNIEFF mise à jour sans nouvelles colonnes:\n", newfichierZNIEFF.nom)
-    write.csv(d.sp, newfichierZNIEFFlite.nom,row.names=FALSE,fileEncoding=fichierZNIEFF.encoding)
+    cat("\n\n  -->  Sauvegarde de la table ZNIEFF mise à jour sans nouvelles colonnes:\n", newfichierZNIEFFlite.nom)
+    write.csv(d.sp, newfichierZNIEFFlite.nom,row.names=FALSE,fileEncoding=fichierZNIEFF.encoding,na="")
     cat("\n       DONE !\n")
 
 
