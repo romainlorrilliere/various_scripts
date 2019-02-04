@@ -149,7 +149,7 @@ regionalisation_espece_znieff <- function(id_REG,
 
 
 
-    d.sp$FG_ESP2 <- ifelse(is.na(d.sp$FG_ESP_REG),d.sp$FG_ESP,d.sp$FG_ESP_REG)
+    d.sp$FG_ESP <- ifelse(is.na(d.sp$FG_ESP_REG),d.sp$FG_ESP,d.sp$FG_ESP_REG)
     d.sp <- d.sp[,colZNIEFF]
 
     newfichierZNIEFFlite.nom <- paste(substr(fichierZNIEFF.nom,1,nchar(fichierZNIEFF.nom)-4),"_REG_",id_REG,"_MNHN_lite.csv",sep="")
