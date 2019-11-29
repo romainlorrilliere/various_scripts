@@ -1,0 +1,24 @@
+---
+title: "Fist R Mardown script"
+author: "me"
+date: "2019-11-07"
+output: "pdf_document"
+---
+
+
+mon premier paragraphe et mon premier chunk
+
+This is a paragraph in an R Markdown document.
+
+Below is a code chunk:
+
+```{r}
+# rmarkdown::render("test.markdown.rmd",output_file="test")
+fit = lm(dist ~ speed, data = cars)
+b   = coef(fit)
+plot(cars)
+abline(fit)
+```
+
+The slope of the regression is `r b[1]`.
+```
