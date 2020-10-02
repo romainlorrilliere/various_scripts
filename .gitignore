@@ -39,6 +39,7 @@ sig/
 *.org~
 *.zip
 *.7z
+*.txt
 
 my*
 
@@ -49,3 +50,5 @@ f_coord_ROUTE.R
 myScript_trend.R
 *.html~
 *.ods
+Aide_analyse_STOCcapture/analyse_STOC_39_transmis_CRBPO.R
+Aide_analyse_STOCcapture/analyse_STOC_39_transmis_CRBPO_RL.R
