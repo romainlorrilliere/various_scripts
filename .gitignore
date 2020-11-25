@@ -52,3 +52,8 @@ myScript_trend.R
 *.ods
 Aide_analyse_STOCcapture/analyse_STOC_39_transmis_CRBPO.R
 Aide_analyse_STOCcapture/analyse_STOC_39_transmis_CRBPO_RL.R
+*.aux
+*.bbl
+*.blg
+*.log
+*.tex~
