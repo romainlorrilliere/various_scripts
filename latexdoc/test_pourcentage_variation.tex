@@ -1,0 +1,306 @@
+\documentclass{article}
+\usepackage[latin1]{inputenc}
+\usepackage{amsmath}
+\usepackage[T1]{fontenc}
+\usepackage[normalem]{ulem}
+\usepackage[french]{babel}
+\usepackage{verbatim}
+\usepackage{graphicx}
+%\usepackage{listings}
+
+\title{Calcul des pourcentages de variation d'abondance}
+
+\author{Lorrilliere R., Lois G. \& Fontaine B.}
+\date{\today} c
+
+
+\begin{document}
+\maketitle
+
+
+
+
+\section{Estimation du taux de croissance $\lambda$}
+\label{sec:les-parametres}
+
+Nous considérons une croissance exponatiel des populations et
+cherchons à fiter un modèle pour estimer le taux de croissance
+$\lambda$, telque (eq. \ref{eq:Nt1}) : 
+
+\begin{equation}
+  \label{eq:Nt1}
+  N_{t+1} = \lambda N_t 
+\end{equation}
+
+Nous proposons plusieurs méthodes.
+
+
+
+\subsection{Modèle log linéaire sur les données brut}
+\label{model_log_lineraire_data_brut}
+
+Modèle classique log-linaire à partir des données brut.
+
+
+\begin{verbatim}
+  md <- glmmTMB(N ~ year + (1|carre) + (1|year), family = nbinom2)
+\end{verbatim}
+
+Permet une bonne estimation des intervalles de confiances mais
+nécessite un plan d'échantillonnage équilibré sur l'ensemble de la
+série temporelle
+
+  
+\subsection{Modèle log linéaire pondéré}
+\label{model_log_lineraire_pondere}
+
+Ajout d'un poid à chaque observation inversemment proportionnel au
+nombre de sites suivis dans l'année. 
+
+\begin{verbatim}
+  md <- glmmTMB(N ~ year + (1|carre) + (1|year), weight =
+1/nb_carre_per_year, family = nbinom2)
+\end{verbatim}
+
+Permet une bonne estimation des intervalles de confiance et devrait
+permettre de corriger un plan d'échantillonnage déséquilibré dans la
+série temporelle. \\
+
+\textbf{Mais ne semble pas fonctionner !!! }\\
+Probablement dûe à la fonction de poids qui semble donner trop de
+poids au première années (cf. résultat pour la mésange charbonnière et
+le roitelet triple bandeau)
+
+
+
+
+\subsection{Modèle log linéaire sur la distribution des estimateurs annuels}
+\label{model_log_lineraire_distribution}
+
+
+On produit un jeux de données à partir de la distribution des
+estimates de modèle de variation d'abondance (années en facteur).
+Puis on fit un modèle log-linéaire sur ce modèle. 
+
+\begin{verbatim}
+## md_f model avec les années en facteur
+
+pp <- fixef(md_f[[1]])$cond
+vv <- vcov(md_f[[1]])$cond
+dposterior <- MASS::mvrnorm(100, mu=pp, Sigma=vv)
+dposterior <- melt(dposterior)
+colnames(dposterior) <- c("id","year","posterior")
+
+md <- lm(log(posterior) ~ year,data=dposterior)
+\end{verbatim}
+
+Permet de bien corriger le plan d'échantillonnage déséquilibré. Ici
+chaque année a 100 points. Par contre les intervalles de confiance
+semblent dépendre du nombre de points par année.
+\\
+Une solution envisageable est d'utiliser le nombre moyen de site
+suivis par an.  
+
+
+\subsection{Modèle log linéaire sur les estimateurs annuels}
+\label{model_log_lineraire_estimateur}
+
+On applique des modèles log-linéraire directement sur les estimateurs
+du modèle variation d'abondance puis à leur intervalles de confiance. 
+
+\begin{verbatim}
+## md_f model avec les années en facteur
+## dmd_f table avec les années (year), les estimateur (estimate) et
+les intervalles de confiance ic_inf et ic_sup
+md <- lm(log(estimate) ~ year,data=dmd_f)
+md_icinf <- lm(log(ic_inf) ~ year,data=dmd_f)
+md_icsup <- lm(log(ic_sup) ~ year,data=dmd_f)
+\end{verbatim}
+
+Permet également de corrigé un biais d'échantillonnage mais peut être
+moins bon fit que la méthode précédente.
+Je ne connais pas la validité des intervalles de confiances ici. 
+
+
+
+\section{Proposition de calcul du pourcentage de variation}
+
+\subsection{Proposition de Romain}
+
+Le pourcentage de variation $Pvar_t$ après $t$ année
+telque (eq. \ref{eq:t}):
+\begin{equation}
+  \label{eq:t}
+  t=lastYear - firstYear
+\end{equation}
+peut s'écrire comme suit (eq. \ref{eq:Pvar1}): 
+\begin{equation} \label{eqn}
+  \label{eq:Pvar1}
+  Pvar_t=\frac{N_t - N_0}{N_0}\times 100
+\end{equation}
+
+Nous estimons $Nt$ selon un modèle log-lineaire afin de modéliser la
+dynamique temporelle selon une fonction exponentiel telque
+(eq. \ref{eq:Nt}):
+\begin{equation}
+  \label{eq:Nt}
+  N_t=N_0\lambda^t
+\end{equation}
+où $\lambda$ est le taux de croissance annuel de la population
+telque (eq. \ref{eq:lambda}):
+\begin{equation}
+  \label{eq:lambda}
+  N_{t+1} = \lambda N_t  \longrightarrow  \lambda = \frac{N_{t+1}}{N_t}
+\end{equation}
+
+Nous pouvons ainsi mettre $N_0$ en facteur dans l'équation de $Pvar$
+telque (eq. \ref{eq:Pvar2}):
+\begin{equation}
+  \label{eq:Pvar2}
+  Pvar_t= \frac{N_0 (\lambda^t - 1)}{N_0} \times 100
+\end{equation}
+
+Et donc simplifier l'equation de $Pvar$ telque (eq. \ref{eq:Pvar3}):
+\begin{equation}
+  \label{eq:Pvar3}
+ \boldsymbol{ Pvar_t=( \lambda^t - 1 )\times 100}
+\end{equation}
+
+\subsection{Proposition de Greg}
+\label{subsec:proposition-de-greg}
+
+Je n'arrive pas à comprendre l'equation que Greg suggère (eq. \ref{eq:PvarGreg}):
+
+\begin{equation}
+  \label{eq:PvarGreg}
+ \boldsymbol{ Pvar_t=(N_0e^{(\lambda-1)t} - N_0e^{(\lambda-1)})\times 100}
+\end{equation}
+
+
+
+
+\section{Résultats}
+
+
+\subsection{Test théorique}
+\label{sec:test-theorique}
+
+A partir d'une modélisation théorique avec un taux de croissance
+$\lambda = 1.1$ d'un $N_0 = 1$ nous simulons la dynamique de
+population de 2001 à 2019.
+
+Ainsi
+
+\begin{equation}
+  \label{eq:theorique}
+  N_{2019}=N_0 \lambda^{2019-2001} = 1 \times 1.1^{18} = 5.5599
+\end{equation}
+
+
+
+
+\begin{center}
+\begin{tabular}{|l|c|}
+  \hline
+   Proposition & Pvar  \\
+  \hline
+  Greg & $507\%$  \\
+  Romain & $456\%$ \\
+  \hline
+\end{tabular}
+\end{center}
+
+
+
+
+\clearpage
+
+\subsection{Pigeon ramier}
+\label{sec:pigeon-ramier}
+
+
+\begin{center}
+\begin{tabular}{|l|r|r|r|}
+  \hline
+  Méthode & Pvar & ICinf & ICsup \\
+  \hline
+  Brut & $91.8 \%$ & $85.2 \%$ & $98.6 \%$  \\
+  Pondéré & $79.3 \%$ &$58.7 \%$   &$102.8 \%$   \\
+  \textbf{Postrior} &$107.7 \%$ &$105.2 \%$   &$110.0 \%$   \\
+  Estimate Greg & $130.6 \%$ &$111.4 \%$   &$150.4 \%$   \\
+  Estimate Romain & $100.2 \%$ &$93.9 \%$  & $106.0 \%$  \\
+  \hline
+\end{tabular}
+\end{center}
+\vspace{2cm}
+
+Représentation des posterior et de la droite de régression
+\vspace{1cm}
+
+\begin{center}
+\begin{figure}[h!]
+   \includegraphics[width=1\textwidth]{fig/COLPAL_sim_test_trend_3}
+\end{figure}
+\end{center}
+\clearpage
+\subsection{Roitelet triple-bandeau}
+\label{sec:roit-triple-band}
+
+\begin{center}
+\begin{tabular}{|l|r|r|r|}
+  \hline
+  Méthode & Pvar & ICinf & ICsup \\
+  \hline
+  Brut & $127.7 \%$ & $104.6 \%$ & $153.5 \%$  \\
+  Pondéré & $176.4 \%$ &$100.6 \%$   &$280.8 \%$   \\
+  \textbf{Postrior} & $102.9 \%$ &$94.1 \%$   &$110.8 \%$   \\
+  Estimate Greg & $74.3 \%$ &$43.2 \%$   &$108.6 \%$   \\
+  Estimate Romain & $79.0 \%$ &$62.3 \%$  & $92.5 \%$  \\
+  \hline
+\end{tabular}
+
+
+
+\end{center}
+
+\vspace{2cm}
+Représentation des posterior et de la droite de régression
+\vspace{1cm}
+\begin{center}
+  \begin{figure}[h!]
+   \includegraphics[width=1\textwidth]{fig/REGIGN_sim_test_trend_3}
+ \end{figure}
+
+\end{center}
+
+
+\clearpage 
+\subsection{Mésange charbonnière}
+\label{sec:mesange-charbonniere}
+
+\begin{center}
+\begin{tabular}{|l|r|r|r|}
+  \hline
+  Méthode & Pvar & ICinf & ICsup \\
+  \hline
+  Brut & $2.7 \%$ & $-0.5 \%$ & $6.1 \%$  \\
+  Pondéré & $34.5 \%$ &$21.1 \%$   &$49.4 \%$   \\
+  \textbf{Postrior} & $9.3 \%$ &$7.7 \%$   &$10.9 \%$   \\
+  Estimate Greg & $9.0 \%$ &$4.7 \%$   &$13.6 \%$   \\
+  Estimate Romain & $7.4 \%$ &$4.2 \%$  & $10.4 \%$  \\
+  \hline
+\end{tabular}
+\end{center}
+
+\vspace{2cm}
+
+Représentation des posterior et de la droite de régression
+\vspace{1cm}
+\begin{center}
+\begin{figure}[h!]
+   \includegraphics[width=1\textwidth]{fig/PARMAJ_sim_test_trend_3}
+\end{figure}
+\end{center}
+
+\clearpage
+\end{document}
