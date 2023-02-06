@@ -59,3 +59,6 @@ Aide_analyse_STOCcapture/analyse_STOC_39_transmis_CRBPO_RL.R
 *.tex~
 *.toc
 *.synctex(busy)
+*.csv
+*.csv
+Aide_pitchou/v_analyse.csv
